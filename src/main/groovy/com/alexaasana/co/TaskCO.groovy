@@ -2,7 +2,7 @@ package com.alexaasana.co
 
 class TaskCO {
 
-    String workspaceName
+    String workspaceName ="Alexa"
     String projectName
     String task
 }
