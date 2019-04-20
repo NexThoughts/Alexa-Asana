@@ -1,6 +1,7 @@
 package alexaasana.com.alexaasana
 
-import grails.converters.JSON
+import com.alexaasana.AlexaResponse
+import groovy.json.JsonOutput
 
 class AlexaController {
 
@@ -9,14 +10,12 @@ class AlexaController {
     def index() {
         println(request.JSON)
 
-        def map = [:]
+        AlexaResponse alexaResponse = null
         println("****************************")
-
-        alexaService.createAsanaProject()
 
         println("Request Type " + request.JSON.request.type)
         if (request?.JSON?.request?.type == "LaunchRequest") {
-            map = alexaService.welcome()
+            alexaResponse = alexaService.welcome()
         } else if (request?.JSON?.request?.type == "SessionEndedRequest") {
             println("Session Ended")
         } else if (request?.JSON?.request?.type == "IntentRequest") {
@@ -24,21 +23,22 @@ class AlexaController {
             switch (request?.JSON?.request?.intent?.name) {
                 case "AMAZON.HelpIntent":
                     println("I am asking for Help")
-                    map = alexaService.help()
+                    alexaResponse = alexaService.help()
                     break
                 case "AMAZON.StopIntent":
                     println("I am asking to stop")
                     break
                 case "AMAZON.CancelIntent":
                     println("I am asking to Cancel")
+                    alexaResponse = alexaService.stopAndExit()
                     break
                 case "AsanaAppIntent":
                     println("I am asking to Asana App")
                     break
             }
         }
-        println("****************************")
-        println(map)
-        render map as JSON
+
+
+        render JsonOutput.toJson(alexaResponse)
     }
 }
