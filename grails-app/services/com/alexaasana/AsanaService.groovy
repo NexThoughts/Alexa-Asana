@@ -15,27 +15,34 @@ class AsanaService {
 
     Task createTask(TaskCO taskCO) {
         Client client = fetchClient()
-        Workspace availableWorkSpace = findWorkSpace(taskCO.workspaceName, client);
 
-        if (!availableWorkSpace) {
+        Project project = findOrCreateProject(taskCO)
+        if (!project) {
             return null
         }
-
-
-        Project project = findProject(availableWorkSpace, taskCO.projectName, client);
-
-        if (!project) {
-            project = client.projects.createInWorkspace(availableWorkSpace.id)
-                    .data("name", taskCO.projectName)
-                    .execute();
-        }
-
         Task task = client.tasks.createInWorkspace(project.id)
                 .data("name", taskCO.task)
                 .data("projects", [project.id])
                 .execute();
 
         return task
+    }
+
+    Project findOrCreateProject(TaskCO taskCO) {
+        Client client = fetchClient()
+        Workspace availableWorkSpace = findWorkSpace(taskCO.workspaceName, client);
+
+        if (!availableWorkSpace) {
+            return null
+        }
+
+        Project project = findProject(availableWorkSpace, taskCO.projectName, client);
+        if (project) {
+            return project
+        }
+        return client.projects.createInWorkspace(availableWorkSpace.id)
+                .data("name", taskCO.projectName)
+                .execute();
     }
 
     Workspace findWorkSpace(String workSpace, Client client) {
