@@ -1,6 +1,4 @@
-package com.alexaasana
-
-import com.fasterxml.jackson.annotation.JsonProperty
+package com.alexaasana.response
 
 class SpeechResponse {
     String type

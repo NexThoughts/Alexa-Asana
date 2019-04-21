@@ -1,4 +1,4 @@
-package com.alexaasana
+package com.alexaasana.response
 
 class CardBody {
     String type
