@@ -2,10 +2,6 @@ package com.alexaasana.request
 
 import com.alexaasana.response.AlexaMessageBuilder
 import com.alexaasana.response.AlexaResponse
-import com.alexaasana.response.CardBody
-import com.alexaasana.response.RepromptBuilder
-import com.alexaasana.response.ResponseBody
-import com.alexaasana.response.SpeechResponse
 import com.alexaasana.co.TaskCO
 import com.amazon.ask.model.Intent
 import com.amazon.ask.model.IntentConfirmationStatus
@@ -44,11 +40,75 @@ class AlexaRequest {
             case "AsanaAppIntent":
                 println("I am asking to Asana App")
                 TaskCO taskCO = new TaskCO(intent)
-                println(taskCO.properties)
+                processAction(taskCO)
                 alexaResponse = messageBuilder.stopAndExit()
                 break
         }
         alexaResponse
+    }
+
+    def processAction(TaskCO taskCO) {
+        switch (taskCO.action) {
+            case "create":
+                processCreate(taskCO)
+                break
+            case "delete":
+                break
+            case "remove":
+                break
+            case "add":
+                break
+            case "update":
+                break
+            case "list":
+                break
+            case "assign":
+                break
+        }
+    }
+
+    def processCreate(TaskCO taskCO) {
+
+        if (!taskCO.projectName)
+            return "Project Name is required to create task, tag, assign to user"
+
+        if (taskCO.taskName && taskCO.tagName && taskCO.email) {
+            createTask(taskCO.projectName, taskCO.taskName, taskCO.tagName, taskCO.email)
+        } else if (taskCO.taskName && taskCO.tagName) {
+            createTaskAndAssignTag(taskCO.projectName, taskCO.taskName, taskCO.tagName)
+        } else if (taskCO.taskName && taskCO.email) {
+            createTaskAndAssignUser(taskCO.projectName, taskCO.taskName, taskCO.email)
+        } else if (taskCO.taskName) {
+            createTask(taskCO.projectName, taskCO.taskName)
+        } else if (taskCO.tagName) {
+            createTag(taskCO.projectName, taskCO.tagName)
+        } else if (taskCO.email) {
+            addUser(taskCO.projectName, taskCO.email)
+        }
+    }
+
+    def createTask(String project, String task, String tag, String email) {
+
+    }
+
+    def createTask(String project, String task) {
+        //Check if Task not exist then create and return
+    }
+
+    def createTaskAndAssignTag(String project, String task, String tag) {
+
+    }
+
+    def createTaskAndAssignUser(String project, String task, String email) {
+
+    }
+
+    def createTag(String project, String tag) {
+        //Check If Tag not exist then create and return tag
+    }
+
+    def addUser(String project, String email) {
+        //Check If User Not exist then create and return user
     }
 
     Intent extractIntent(Map alexaRequest) {
