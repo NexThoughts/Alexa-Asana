@@ -1,8 +1,10 @@
 package com.alexaasana.co
 
 class TaskCO {
-
-    String workspaceName ="Alexa"
-    String projectName
-    String task
+    String action = ""
+    String workspaceName = "Alexa"
+    String projectName = ""
+    String taskName = ""
+    String tagName = ""
+    String email = ""
 }

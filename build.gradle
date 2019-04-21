@@ -53,6 +53,7 @@ dependencies {
     runtime "org.apache.tomcat:tomcat-jdbc"
     runtime "com.bertramlabs.plugins:asset-pipeline-grails:2.15.1"
     compile "com.asana:asana:0.8.1"
+    compile "com.amazon.alexa:ask-sdk-core:2.17.0"
 }
 
 bootRun {
