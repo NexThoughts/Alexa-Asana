@@ -1,8 +1,6 @@
 package alexaasana.com.alexaasana
 
-import com.alexaasana.AlexaResponse
-import com.amazon.ask.model.Intent
-import com.amazon.ask.model.IntentConfirmationStatus
+import com.alexaasana.response.AlexaResponse
 import groovy.json.JsonOutput
 
 class AlexaController {

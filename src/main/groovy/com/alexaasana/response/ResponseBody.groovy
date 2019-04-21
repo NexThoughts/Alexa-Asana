@@ -1,4 +1,4 @@
-package com.alexaasana
+package com.alexaasana.response
 
 class ResponseBody {
     Boolean shouldEndSession
