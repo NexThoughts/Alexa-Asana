@@ -1,4 +1,4 @@
-package com.alexaasana
+package com.alexaasana.response
 
 class  AlexaResponse {
     String version = "1.0"

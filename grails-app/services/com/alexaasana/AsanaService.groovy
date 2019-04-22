@@ -22,7 +22,7 @@ class AsanaService {
             return null
         }
         Task task = client.tasks.createInWorkspace(project.id)
-                .data("name", taskCO.task)
+                .data("name", taskCO.taskName)
                 .data("projects", [project.id])
                 .execute();
 

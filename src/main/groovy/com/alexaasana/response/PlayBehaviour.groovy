@@ -1,4 +1,4 @@
-package com.alexaasana
+package com.alexaasana.response
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
