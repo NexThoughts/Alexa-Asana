@@ -13,15 +13,19 @@ class AsanaIntegration {
 
     Task createTask(TaskCO taskCO) {
         Client client = fetchClient()
-
+        Workspace workspace = findWorkSpace(taskCO.workspaceName, client)
         Project project = findOrCreateProject(taskCO)
         if (!project) {
             return null
         }
-        Task task = client.tasks.createInWorkspace(project.id)
+        Task task = client.tasks.createInWorkspace(workspace.id)
                 .data("name", taskCO.taskName)
-                .data("projects", [project.id])
                 .execute();
+
+        taskCO.taskId = task.id
+        if (task && taskCO.projectName) {
+            addProjectsToTask(taskCO)
+        }
 
         if (task && taskCO.email) {
             assignTaskToUser(taskCO)
@@ -39,8 +43,8 @@ class AsanaIntegration {
         Workspace availableWorkSpace = findWorkSpace(workSpace, client)
         if (!workSpace)
             return null
-        CollectionRequest<Tag> tagList = client.tags.findByWorkspace(availableWorkSpace.id)
-        Tag tag = tagList ? tagList.find { it.name?.equals(tagName) } as Tag : null
+        List<Tag> tagList = client.tags.findByWorkspace(availableWorkSpace.id).execute()
+        Tag tag = tagList ? tagList.find { it.name?.equalsIgnoreCase(tagName) } : null
         if (tag) {
             return tag
         }
@@ -52,8 +56,8 @@ class AsanaIntegration {
 
 
     Workspace findWorkSpace(String workSpace, Client client) {
-        CollectionRequest<Workspace> workspaceList = client.workspaces.findAll()
-        def availableWorkSpace = workspaceList ? workspaceList.find { it.name?.equals(workSpace) } : null
+        List<Workspace> workspaceList = client.workspaces.findAll().execute()
+        def availableWorkSpace = workspaceList ? workspaceList.find { it.name?.equalsIgnoreCase(workSpace) } : null
         return availableWorkSpace ? availableWorkSpace as Workspace : null
     }
 
@@ -77,13 +81,13 @@ class AsanaIntegration {
 
     Project findProject(Workspace workspace, String projectName, Client client) {
         List<Project> projects = client.projects.findByWorkspace(workspace.id).execute();
-        Project project = projects ? projects.find { it.name?.equals(projectName) } : null
+        Project project = projects ? projects.find { it.name?.equalsIgnoreCase(projectName) } : null
         return project
     }
 
     User findUser(Workspace workspace, String userName, Client client) {
         List<User> users = client.users.findByWorkspace(workspace.id).execute();
-        User user = users ? users.find { it.email?.equals(userName) } : null
+        User user = users ? users.find { it.email?.equalsIgnoreCase(userName) } : null
         return user
     }
 
@@ -101,7 +105,7 @@ class AsanaIntegration {
         Workspace workspace = findWorkSpace(taskCO.workspaceName, client)
         User user = findUser(workspace, taskCO.email, client)
         if (user) {
-            Task task = findTask(taskCO.taskName, client)
+            Task task = findTask(taskCO.taskId, client)
             return client.tasks.update(task.id)
                     .data("assignee", user)
                     .execute()
@@ -113,10 +117,23 @@ class AsanaIntegration {
         Client client = fetchClient()
         Tag tag = findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
         if (tag) {
-            Task task = findTask(taskCO.taskName, client)
-            return client.tasks.update(task.id)
-                    .data("tags", [tag])
-                    .execute()
+            Task task = findTask(taskCO.taskId, client)
+            task.tags.add(tag)
+            return task
+        }
+        return null
+    }
+
+    Task addProjectsToTask(TaskCO taskCO) {
+        Client client = fetchClient()
+        Project project = findOrCreateProject(taskCO)
+        if (project) {
+            Task task = findTask(taskCO.taskId, client)
+            Task.Membership membership = new Task.Membership()
+            membership.project = project
+            task.projects.add(project)
+            task.memberships.add(membership)
+            return task
         }
         return null
     }
