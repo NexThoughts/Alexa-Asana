@@ -1,5 +1,6 @@
 package com.alexaasana.request
 
+import com.alexaasana.api.AsanaIntegration
 import com.alexaasana.response.AlexaMessageBuilder
 import com.alexaasana.response.AlexaResponse
 import com.alexaasana.co.TaskCO
@@ -77,8 +78,19 @@ class AlexaRequest {
 
         if (!taskCO.projectName)
             return "Project Name is required to create task, tag, assign to user"
+        AsanaIntegration asanaIntegration = new AsanaIntegration()
+        if (taskCO.taskName) {
+            asanaIntegration.createTask(taskCO)
+        } else{
+            if (taskCO.projectName) {
+                asanaIntegration.findOrCreateProject(taskCO)
+            } else if (taskCO.tagName) {
+                asanaIntegration.findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
+            }
+        }
 
 
+/*
         Client client = Client.accessToken(key)
         Workspace workspace = client.workspaces.findAll().find { it.name.equalsIgnoreCase(taskCO.workspaceName) }
 
@@ -110,6 +122,7 @@ class AlexaRequest {
         }
 
         println("Selected tag is " + selectedTag.properties)
+*/
 
         /* Task demoTask = client.tasks
                  .createInWorkspace(workspace.id)
