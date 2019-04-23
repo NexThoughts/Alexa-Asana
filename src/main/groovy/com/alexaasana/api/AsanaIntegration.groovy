@@ -20,12 +20,10 @@ class AsanaIntegration {
         }
         Task task = client.tasks.createInWorkspace(workspace.id)
                 .data("name", taskCO.taskName)
+                .data("projects", Arrays.asList(project.id))
                 .execute();
 
         taskCO.taskId = task.id
-        if (task && taskCO.projectName) {
-            addProjectsToTask(taskCO)
-        }
 
         if (task && taskCO.email) {
             assignTaskToUser(taskCO)
@@ -34,7 +32,7 @@ class AsanaIntegration {
         if (task && taskCO.tagName) {
             assignTagToTask(taskCO)
         }
-
+        removeTagFromTask(taskCO)
         return task
     }
 
@@ -87,7 +85,7 @@ class AsanaIntegration {
 
     User findUser(Workspace workspace, String userName, Client client) {
         List<User> users = client.users.findByWorkspace(workspace.id).execute();
-        User user = users ? users.find { it.email?.equalsIgnoreCase(userName) } : null
+        User user = users ? users.find { it.name?.equalsIgnoreCase(userName) } : null
         return user
     }
 
@@ -117,24 +115,23 @@ class AsanaIntegration {
         Client client = fetchClient()
         Tag tag = findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
         if (tag) {
-            Task task = findTask(taskCO.taskId, client)
-            task.tags.add(tag)
-            return task
+            return client.tasks.addTag(taskCO.taskId)
+                    .data("tag", tag.id)
+                    .execute()
         }
         return null
     }
 
-    Task addProjectsToTask(TaskCO taskCO) {
+
+    Task removeTagFromTask(TaskCO taskCO) {
         Client client = fetchClient()
-        Project project = findOrCreateProject(taskCO)
-        if (project) {
-            Task task = findTask(taskCO.taskId, client)
-            Task.Membership membership = new Task.Membership()
-            membership.project = project
-            task.projects.add(project)
-            task.memberships.add(membership)
-            return task
+        Tag tag = findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
+        if (tag) {
+            return client.tasks.removeTag(taskCO.taskId)
+                    .data("tag", tag.id)
+                    .execute()
         }
         return null
     }
+
 }

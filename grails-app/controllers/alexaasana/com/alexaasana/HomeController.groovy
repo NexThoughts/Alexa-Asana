@@ -9,8 +9,8 @@ class HomeController {
         TaskCO taskCO = new TaskCO()
         taskCO.taskName = "My First Task"
         taskCO.projectName = "Demo Project"
-        taskCO.tagName = "Test"
-        taskCO.email = "anubhav@fintechlabs.in"
+        taskCO.tagName = "Test1"
+        taskCO.email = "anubhav"
         AsanaIntegration asanaIntegration = new AsanaIntegration()
         asanaIntegration.createTask(taskCO)
         render "DONE-------"
