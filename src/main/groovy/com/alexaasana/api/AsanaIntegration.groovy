@@ -89,8 +89,22 @@ class AsanaIntegration {
         return user
     }
 
-    Task findTask(String task, Client client) {
+    Task findTaskById(String task, Client client) {
         return client.tasks.findById(task).execute();
+    }
+
+    Task findTaskFromProject(Project project, String taskName, Client client) {
+        List<Task> tasks = client.tasks.findByProject(project.id).execute();
+        Task task = tasks ? tasks.find { it.name?.equalsIgnoreCase(taskName) } : null
+        return task
+    }
+
+    Task findTaskByName(TaskCO taskCO, Client client) {
+        Workspace workspace = findWorkSpace(taskCO.workspaceName, client)
+        User user = findUser(workspace, taskCO.email, client)
+        List<Task> tasks = client.tasks.findAll().query("assignee", user.id).query("workspace", workspace.id).execute();
+        Task task = tasks ? tasks.find { it.name?.equalsIgnoreCase(taskCO.taskName) } as Task : null
+        return task
     }
 
 
@@ -103,7 +117,7 @@ class AsanaIntegration {
         Workspace workspace = findWorkSpace(taskCO.workspaceName, client)
         User user = findUser(workspace, taskCO.email, client)
         if (user) {
-            Task task = findTask(taskCO.taskId, client)
+            Task task = findTaskById(taskCO.taskId, client)
             return client.tasks.update(task.id)
                     .data("assignee", user)
                     .execute()
@@ -129,6 +143,31 @@ class AsanaIntegration {
         if (tag) {
             return client.tasks.removeTag(taskCO.taskId)
                     .data("tag", tag.id)
+                    .execute()
+        }
+        return null
+    }
+
+    Task addProjectToTask(TaskCO taskCO) {
+        Client client = fetchClient()
+        Project project = findOrCreateProject(taskCO)
+        Task task = findTaskByName(taskCO, client)
+        if (project && task) {
+            return client.tasks.addProject(task.id)
+                    .data("project", project.id)
+                    .execute()
+        }
+        return null
+    }
+
+    Task removeProjectFromTask(TaskCO taskCO) {
+        Client client = fetchClient()
+        Workspace workspace = findWorkSpace(taskCO.workspaceName, client)
+        Project project = findProject(workspace, taskCO.projectName, client)
+        Task task = project ? findTaskFromProject(project, taskCO.taskName, client) : null
+        if (project && task) {
+            return client.tasks.removeProject(task.id)
+                    .data("project", project.id)
                     .execute()
         }
         return null
