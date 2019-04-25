@@ -11,9 +11,19 @@ import com.asana.models.Project
 import com.asana.models.Tag
 import com.asana.models.Task
 import com.asana.models.Workspace
+import com.asana.requests.CollectionRequest
 
 class AlexaRequest {
-    def grailsApplication
+
+    String asanaKey = ""
+    AlexaMessageBuilder messageBuilder
+
+    AlexaRequest() {}
+
+    AlexaRequest(String asanaKey) {
+        this.asanaKey = asanaKey
+        this.messageBuilder = new AlexaMessageBuilder()
+    }
 
     AlexaResponse processRequest(Map alexaRequest, AlexaResponse alexaResponse) {
         String type = alexaRequest?.request?.type
@@ -54,7 +64,7 @@ class AlexaRequest {
         alexaResponse
     }
 
-    def processAction(TaskCO taskCO) {
+    AlexaResponse processAction(TaskCO taskCO) {
         switch (taskCO.action) {
             case "create":
                 processCreate(taskCO)
@@ -74,19 +84,22 @@ class AlexaRequest {
         }
     }
 
-    def processCreate(TaskCO taskCO, String key) {
+    AlexaResponse processCreate(TaskCO taskCO) {
+        if (!taskCO.projectName) {
+            messageBuilder.projectNameRequired(taskCO)
+        }
 
-        if (!taskCO.projectName)
-            return "Project Name is required to create task, tag, assign to user"
         AsanaIntegration asanaIntegration = new AsanaIntegration()
+
         if (taskCO.taskName) {
-            asanaIntegration.createTask(taskCO)
-        } else{
-            if (taskCO.projectName) {
-                asanaIntegration.findOrCreateProject(taskCO)
-            } else if (taskCO.tagName) {
-                asanaIntegration.findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
-            }
+            Task task = asanaIntegration.createTask(taskCO)
+            messageBuilder.success("Task with id ${task.id} has been created.")
+        } else if (taskCO.projectName) {
+            Project project = asanaIntegration.findOrCreateProject(taskCO)
+            messageBuilder.success("Project with id ${project.id} has been created.")
+        } else if (taskCO.tagName) {
+            Tag tag = asanaIntegration.findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
+            messageBuilder.success("Tag with id ${tag.id} has been created.")
         }
 
 
@@ -160,9 +173,50 @@ class AlexaRequest {
 
     }
 
-    def createTask(String project, String task) {
+    def createTask(String projectStr, String taskStr) {
         //Check if Task not exist then create and return
+
+        Project project = findOrCreateProject(projectStr)
+        if (!project) {
+            return null
+        }
+        Task task = client.tasks.createInWorkspace(project.id)
+                .data("name", taskCO.taskName)
+                .data("projects", [project.id])
+                .execute();
+
+        return task
     }
+
+    Project findOrCreateProject(String workspaceName, String projectName) {
+        Client client = Client.accessToken(this.asanaKey)
+        Workspace availableWorkSpace = findWorkSpace(workspaceName, client);
+
+        if (!availableWorkSpace) {
+            return null
+        }
+
+        Project project = findProject(availableWorkSpace, projectName, client);
+        if (project) {
+            return project
+        }
+        return client.projects.createInWorkspace(availableWorkSpace.id)
+                .data("name", projectName)
+                .execute();
+    }
+
+    Workspace findWorkSpace(String workSpace, Client client) {
+        CollectionRequest<Workspace> workspaceList = client.workspaces.findAll()
+        def availableWorkSpace = workspaceList ? workspaceList.find { it.name?.equals(workSpace) } : null
+        return availableWorkSpace ? availableWorkSpace as Workspace : null
+    }
+
+    Project findProject(Workspace workspace, String projectName, Client client) {
+        List<Project> projects = client.projects.findByWorkspace(workspace.id).execute();
+        Project project = projects ? projects.find { it.name?.equals(projectName) } : null
+        return project
+    }
+
 
     def createTaskAndAssignTag(String project, String task, String tag) {
 
