@@ -9,6 +9,7 @@ class TaskCO {
     String taskName = ""
     String tagName = ""
     String email = ""
+    String taskId = null
 
     TaskCO() {
 

@@ -3,6 +3,7 @@ package com.alexaasana
 import com.alexaasana.co.TaskCO
 import com.asana.Client
 import com.asana.models.Project
+import com.asana.models.Tag
 import com.asana.models.Task
 import com.asana.models.Workspace
 import com.asana.requests.CollectionRequest
@@ -42,6 +43,22 @@ class AsanaService {
         }
         return client.projects.createInWorkspace(availableWorkSpace.id)
                 .data("name", taskCO.projectName)
+                .execute();
+    }
+
+    Tag CreateTag(String tagName, String workSpace) {
+        Client client = fetchClient()
+        Workspace availableWorkSpace = findWorkSpace(workSpace, client)
+        if (!workSpace)
+            return null
+        CollectionRequest<Tag> tagList = client.tags.findByWorkspace(availableWorkSpace.id)
+        Tag tag = tagList ? tagList.find { it.name?.equals(tagName) } as Tag: null
+        if (tag) {
+            return tag
+        }
+
+        return client.tags.createInWorkspace(availableWorkSpace.id)
+                .data("name",tagName)
                 .execute();
     }
 
