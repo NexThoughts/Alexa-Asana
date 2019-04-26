@@ -1,47 +1,38 @@
 package com.alexaasana.request
 
 import com.alexaasana.api.AsanaIntegration
+import com.alexaasana.co.TaskCO
 import com.alexaasana.response.AlexaMessageBuilder
 import com.alexaasana.response.AlexaResponse
-import com.alexaasana.co.TaskCO
 import com.amazon.ask.model.Intent
 import com.amazon.ask.model.IntentConfirmationStatus
-import com.asana.Client
+import com.amazon.ask.model.Session
 import com.asana.models.Project
 import com.asana.models.Tag
 import com.asana.models.Task
-import com.asana.models.Workspace
-import com.asana.requests.CollectionRequest
 
 class AlexaRequest {
 
-    String asanaKey = ""
-    AlexaMessageBuilder messageBuilder
-
-    AlexaRequest() {}
-
-    AlexaRequest(String asanaKey) {
-        this.asanaKey = asanaKey
-        this.messageBuilder = new AlexaMessageBuilder()
-    }
-
-    AlexaResponse processRequest(Map alexaRequest, AlexaResponse alexaResponse) {
+    AlexaResponse processRequest(Map alexaRequest) {
         String type = alexaRequest?.request?.type
 
         println("Request Type " + type)
         AlexaMessageBuilder messageBuilder = new AlexaMessageBuilder()
         if (type == "LaunchRequest") {
-            alexaResponse = messageBuilder.welcome()
+            return messageBuilder.welcome()
         } else if (type == "SessionEndedRequest") {
-            alexaResponse = messageBuilder.stopAndExit()
+            return messageBuilder.stopAndExit()
         } else if (type == "IntentRequest") {
-            alexaResponse = processIntentRequest(alexaRequest, messageBuilder, alexaResponse)
+            return processIntentRequest(alexaRequest, messageBuilder)
+        } else {
+            return null
         }
-        alexaResponse
     }
 
-    private AlexaResponse processIntentRequest(Map alexaRequest, AlexaMessageBuilder messageBuilder, AlexaResponse alexaResponse) {
+    private AlexaResponse processIntentRequest(Map alexaRequest, AlexaMessageBuilder messageBuilder) {
+        AlexaResponse alexaResponse = null
         Intent intent = extractIntent(alexaRequest)
+        Session session = extractAttribute(alexaRequest)
         switch (intent?.name) {
             case "AMAZON.HelpIntent":
                 println("I am asking for Help")
@@ -56,53 +47,82 @@ class AlexaRequest {
                 break
             case "AsanaAppIntent":
                 println("I am asking to Asana App")
-                TaskCO taskCO = new TaskCO(intent)
-                processAction(taskCO)
-                alexaResponse = messageBuilder.stopAndExit()
+                TaskCO taskCO = new TaskCO(intent, session)
+                alexaResponse = processAction(taskCO)
+                break
+            case "PlayMusic":
                 break
         }
-        alexaResponse
+        return alexaResponse
+    }
+
+    AlexaResponse playMusic(TaskCO taskCO) {
+        if (!taskCO.type) {
+            return null
+        }
+        
+
     }
 
     AlexaResponse processAction(TaskCO taskCO) {
+        AlexaResponse alexaResponse = null
         switch (taskCO.action) {
             case "create":
-                processCreate(taskCO)
+                println("I am going to create")
+                alexaResponse = processCreate(taskCO)
                 break
             case "delete":
+                processRemove(taskCO)
                 break
             case "remove":
+                processRemove(taskCO)
                 break
             case "add":
+                processAdd(taskCO)
                 break
             case "update":
-                break
-            case "list":
+                processUpdate(taskCO)
                 break
             case "assign":
+                processAdd(taskCO)
                 break
         }
+        return alexaResponse
+    }
+
+    AlexaResponse processUpdate(TaskCO taskCO) {
+        return null
+    }
+
+    AlexaResponse processAdd(TaskCO taskCO) {
+        return null
+    }
+
+    AlexaResponse processRemove(TaskCO taskCO) {
+        return null
     }
 
     AlexaResponse processCreate(TaskCO taskCO) {
+        AlexaMessageBuilder messageBuilder = new AlexaMessageBuilder()
         if (!taskCO.projectName) {
-            messageBuilder.projectNameRequired(taskCO)
+            return messageBuilder.projectNameRequired(taskCO)
         }
+
+        println("I have asana project name")
 
         AsanaIntegration asanaIntegration = new AsanaIntegration()
 
         if (taskCO.taskName) {
+            println("I have task name")
             Task task = asanaIntegration.createTask(taskCO)
-            messageBuilder.success("Task with id ${task.id} has been created.")
+            return messageBuilder.success("Task with id ${task.id} has been created.")
         } else if (taskCO.projectName) {
             Project project = asanaIntegration.findOrCreateProject(taskCO)
-            messageBuilder.success("Project with id ${project.id} has been created.")
+            return messageBuilder.success("Project with id ${project.id} has been created.")
         } else if (taskCO.tagName) {
             Tag tag = asanaIntegration.findOrCreateTag(taskCO.tagName, taskCO.workspaceName)
-            messageBuilder.success("Tag with id ${tag.id} has been created.")
+            return messageBuilder.success("Tag with id ${tag.id} has been created.")
         }
-
-
 /*
         Client client = Client.accessToken(key)
         Workspace workspace = client.workspaces.findAll().find { it.name.equalsIgnoreCase(taskCO.workspaceName) }
@@ -135,26 +155,21 @@ class AlexaRequest {
         }
 
         println("Selected tag is " + selectedTag.properties)
-*/
-
-        /* Task demoTask = client.tasks
+ Task demoTask = client.tasks
                  .createInWorkspace(workspace.id)
                  .data("name", taskCO.taskName)
                  .data("projects", [selectedProject.id])
                  .data("tags", [selectedTag.id])
-                 .execute()*/
+                 .execute()
 
-        List<Task> tasks = client.tasks.findByProject(selectedProject.id) as ArrayList
+                 List<Task> tasks = client.tasks.findByProject(selectedProject.id) as ArrayList
 
-        Task demoTask = tasks.find { it.name.equalsIgnoreCase(taskCO.taskName) }
+         Task demoTask = tasks.find { it.name.equalsIgnoreCase(taskCO.taskName) }
 
-        client.tasks
-                .addTag(demoTask.id)
-                .data("tag", selectedTag.id)
-                .execute()
-
-
-        /*if (taskCO.taskName && taskCO.tagName && taskCO.email) {
+         client.tasks
+                 .addTag(demoTask.id)
+                 .data("tag", selectedTag.id)
+                 .execute()if (taskCO.taskName && taskCO.tagName && taskCO.email) {
             createTask(taskCO.projectName, taskCO.taskName, taskCO.tagName, taskCO.email)
         } else if (taskCO.taskName && taskCO.tagName) {
             createTaskAndAssignTag(taskCO.projectName, taskCO.taskName, taskCO.tagName)
@@ -173,51 +188,6 @@ class AlexaRequest {
 
     }
 
-    def createTask(String projectStr, String taskStr) {
-        //Check if Task not exist then create and return
-
-        Project project = findOrCreateProject(projectStr)
-        if (!project) {
-            return null
-        }
-        Task task = client.tasks.createInWorkspace(project.id)
-                .data("name", taskCO.taskName)
-                .data("projects", [project.id])
-                .execute();
-
-        return task
-    }
-
-    Project findOrCreateProject(String workspaceName, String projectName) {
-        Client client = Client.accessToken(this.asanaKey)
-        Workspace availableWorkSpace = findWorkSpace(workspaceName, client);
-
-        if (!availableWorkSpace) {
-            return null
-        }
-
-        Project project = findProject(availableWorkSpace, projectName, client);
-        if (project) {
-            return project
-        }
-        return client.projects.createInWorkspace(availableWorkSpace.id)
-                .data("name", projectName)
-                .execute();
-    }
-
-    Workspace findWorkSpace(String workSpace, Client client) {
-        CollectionRequest<Workspace> workspaceList = client.workspaces.findAll()
-        def availableWorkSpace = workspaceList ? workspaceList.find { it.name?.equals(workSpace) } : null
-        return availableWorkSpace ? availableWorkSpace as Workspace : null
-    }
-
-    Project findProject(Workspace workspace, String projectName, Client client) {
-        List<Project> projects = client.projects.findByWorkspace(workspace.id).execute();
-        Project project = projects ? projects.find { it.name?.equals(projectName) } : null
-        return project
-    }
-
-
     def createTaskAndAssignTag(String project, String task, String tag) {
 
     }
@@ -232,6 +202,16 @@ class AlexaRequest {
 
     def addUser(String project, String email) {
         //Check If User Not exist then create and return user
+    }
+
+    Session extractAttribute(Map alexaRequest) {
+        Map sessionBuilder = alexaRequest?.session as Map
+        println(sessionBuilder)
+        Session.Builder builder = Session.builder()
+        builder.withAttributes(sessionBuilder.attributes as Map)
+
+        Session session = builder.build()
+        session
     }
 
     Intent extractIntent(Map alexaRequest) {
