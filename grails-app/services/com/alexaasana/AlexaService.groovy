@@ -5,10 +5,8 @@ import com.alexaasana.response.AlexaResponse
 
 class AlexaService {
 
-    def grailsApplication
-
-    def processRequest(Map alexaRequest, AlexaResponse alexaResponse) {
+    AlexaResponse processRequest(Map alexaRequest) {
         AlexaRequest request = new AlexaRequest()
-        request.processRequest(alexaRequest, alexaResponse)
+        return request.processRequest(alexaRequest)
     }
 }
