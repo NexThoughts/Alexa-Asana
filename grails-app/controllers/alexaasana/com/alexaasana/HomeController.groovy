@@ -13,7 +13,7 @@ class HomeController {
         taskCO.projectName = "Demo Project"
         taskCO.tagName = "Test1"
         taskCO.email = "anubhav"
-        AsanaIntegration asanaIntegration = new AsanaIntegration()
+        AsanaApi asanaIntegration = new AsanaApi()
         asanaIntegration.createTask(taskCO)
         render "DONE-------"*/
 

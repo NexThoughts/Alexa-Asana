@@ -1,6 +1,6 @@
 package com.alexaasana.request
 
-import com.alexaasana.api.AsanaIntegration
+import com.alexaasana.asana.AsanaApi
 import com.alexaasana.co.TaskCO
 import com.alexaasana.response.AlexaMessageBuilder
 import com.alexaasana.response.AlexaResponse
@@ -60,7 +60,7 @@ class AlexaRequest {
         if (!taskCO.type) {
             return null
         }
-        
+
 
     }
 
@@ -110,7 +110,7 @@ class AlexaRequest {
 
         println("I have asana project name")
 
-        AsanaIntegration asanaIntegration = new AsanaIntegration()
+        AsanaApi asanaIntegration = new AsanaApi()
 
         if (taskCO.taskName) {
             println("I have task name")
