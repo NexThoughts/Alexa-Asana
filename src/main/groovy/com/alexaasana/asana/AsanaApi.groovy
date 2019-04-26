@@ -1,10 +1,10 @@
-package com.alexaasana.api
+package com.alexaasana.asana
 
 import com.alexaasana.co.TaskCO
 import com.asana.Client
 import com.asana.models.*
 
-class AsanaIntegration {
+class AsanaApi {
 
     Task createTask(TaskCO taskCO) {
         Client client = fetchClient()
