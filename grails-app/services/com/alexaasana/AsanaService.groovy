@@ -46,7 +46,7 @@ class AsanaService {
                 .execute();
     }
 
-    Tag CreateTag(String tagName, String workSpace) {
+    Tag createTag(String tagName, String workSpace) {
         Client client = fetchClient()
         Workspace availableWorkSpace = findWorkSpace(workSpace, client)
         if (!workSpace)
